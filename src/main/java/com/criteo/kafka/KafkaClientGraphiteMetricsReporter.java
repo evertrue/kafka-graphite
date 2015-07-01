@@ -6,6 +6,7 @@ import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.List;
@@ -66,7 +67,9 @@ public class KafkaClientGraphiteMetricsReporter implements MetricsReporter {
             if (!metric.metricName().name().matches(excludeRegex))
             try {
                 if (graphiteWriter == null) initWriter();
-                graphiteWriter.printf("%s.%s.%s %f %d%n", graphiteGroupPrefix, metric.metricName().group(), metric.metricName().name(), metric.value(), System.currentTimeMillis() / 1000);
+                Double value = metric.value();
+                if (value.isInfinite() || value.isNaN()) return;
+                graphiteWriter.printf("%s.%s.%s %f %d%n", graphiteGroupPrefix, metric.metricName().group(), metric.metricName().name(), value, System.currentTimeMillis() / 1000);
                 graphiteWriter.flush();
             } catch (Exception e) {
                 LOG.error(String.format("failed to send %s metric to kafka", metric.metricName().name()), e);
